@@ -21,10 +21,6 @@ client.on('ready', function () {
     isFtpReady = true;
 });
 
-
-
-
-
 chokidar.watch(__dirname + '/videos/', {ignored: /[\/\\]\./}).on('all', function(event, path) {
     if(event == "add"){
         console.log('file '+event, path);
@@ -51,7 +47,11 @@ chokidar.watch(__dirname + '/videos/', {ignored: /[\/\\]\./}).on('all', function
 });
 
 exports.start = function(){
-    var cmd = 'ffmpeg -rtsp_transport tcp -i '+rtsp_uri+' -vcodec libx264 -segment_time '+save_in_secs+' -reset_timestamps 1 -f segment '+ __dirname + '/videos/' +'YDXJ0028_%03d.mp4';
+    var date = new Date();
+    var year = date.getFullYear();
+    year = year.toString().substr(2, 2);
+    var unique = 'd_' + date.getDate() + '-' + (date.getMonth() + 1) + '-' + year + '-' + date.getHours() + '-' + date.getMinutes() + '-' + date.getSeconds();
+    var cmd = 'ffmpeg -rtsp_transport tcp -i '+rtsp_uri+' -vcodec libx264 -segment_time '+save_in_secs+' -reset_timestamps 1 -f segment '+ __dirname + '/videos/' +unique+'-BLATCS_%03d.mp4';
     console.log(' video processing start');
     child = exec(cmd);
     child.stdout.on('data', function (data) {
