@@ -12,7 +12,7 @@ Simpan data atcs video setiap 'n' detik sekali lewat RTSP, kemudian simpan ke NA
 edit `rtsp_settings` array. You can add one or more camera/rtsp settings :
 
 ```javascript
- [
+[
   {
     uri : '<your_rtsp_url>', 
     name : '<name_camera_or_whatever>', 
