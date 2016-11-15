@@ -6,14 +6,16 @@ var Client = require('ftp');
 var client = new Client();
 var isFtpReady = false;
 
-var rtsp_uri = ''
-var save_in_secs = '15';
+var rtsp_settings = [
+    {uri : '', name : '', ftpdir : ''}
+];
+
+var save_in_secs = '20';
 var connectionProperties = {
     host: "",
     user: "",
     password: ""
 };
-var ftp_directory = '/ATCS/video/unila1/'
 
 
 client.connect(connectionProperties);
@@ -25,20 +27,21 @@ client.on('ready', function () {
 
 chokidar.watch(__dirname + '/videos/', {ignored: /[\/\\]\./}).on('all', function(event, path) {
     if(event == "add"){
-        console.log('file '+event, path);
-        if(isFtpReady){
-            var arr = path.split("/");
-            var _s = getFiles('videos/', '.mp4');
-            var arrP = _s.split('/');
-            //console.log("file add : "+arr[arr.length-1]);
-            console.log("last file : "+arrP[arrP.length-1]);
-        }
+        var arr = path.split("/");
+        var _s = getFiles('videos/', '.mp4');
+        var arrP = _s.split('/');
+        //console.log("file add : "+arr[arr.length-1]);
+        console.log("last file : "+arrP[arrP.length-1]);
+        console.log('file video from :'+event, path);
     }else if(event == "change"){
         console.log('file '+event, path);
+        var arrCheck = path.split('-');
+        arrCheck = arrCheck[arrCheck.length-1].split('.');
+        var index = parseInt(arrCheck[0]);
+        console.log('file : '+rtsp_settings[index].name);
         var arr = path.split("/");
         var date = new Date();
         var year = date.getFullYear();
-        year = year.toString().substr(2, 2);
         arr[arr.length-1] = date.getDate() + '-' + (date.getMonth() + 1) + '-' + year + '-' + date.getHours() + '-' + date.getMinutes() + '-' + date.getSeconds();
         var _r = '';
         for(var i = 0; i < arr.length; i++){
@@ -49,7 +52,7 @@ chokidar.watch(__dirname + '/videos/', {ignored: /[\/\\]\./}).on('all', function
             if ( err ) console.log('ERROR: ' + err);
         });
         if(isFtpReady) {
-            client.put(_r, ftp_directory + arr[arr.length-1]+'.mp4', function (err) {
+            client.put(_r, rtsp_settings[index].ftpdir + arr[arr.length-1]+'.mp4', function (err) {
                 if (err) {
                     console.log("upload " + arr[arr.length-1]+'.mp4', err);
                 } else {
@@ -66,20 +69,22 @@ exports.start = function(){
     var year = date.getFullYear();
     year = year.toString().substr(2, 2);
     var unique = date.getDate() + '-' + (date.getMonth() + 1) + '-' + year + '-' + date.getHours() + '-' + date.getMinutes() + '-' + date.getSeconds();
-    var cmd = 'ffmpeg -rtsp_transport tcp -i '+rtsp_uri+' -vcodec libx264 -segment_time '+save_in_secs+' -reset_timestamps 1 -f segment '+ __dirname + '/videos/' +unique+'-BLATCS_%03d-01.mp4';
-    console.log(' video processing start');
-    child = exec(cmd);
-    child.stdout.on('data', function (data) {
-     //   console.log('stdout: ' + data);
+    for(var i = 0; i < rtsp_settings.length; i++){
+        var cmd = 'ffmpeg -rtsp_transport tcp -i '+rtsp_settings[i].uri+' -vcodec libx264 -segment_time '+save_in_secs+' -reset_timestamps 1 -f segment '+ __dirname + '/videos/' +unique+'-BLATCS_%03d-'+i+'.mp4';
+        console.log(' video processing to '+rtsp_settings[i].name+' start');
+        child = exec(cmd);
+        child.stdout.on('data', function (data) {
+            //   console.log('stdout: ' + data);
         });
-    child.stderr.on('data', function (data) {
-       //     console.log('stdout: ' + data);
+        child.stderr.on('data', function (data) {
+            //     console.log('stdout: ' + data);
         });
-    child.on('exit', function (code, signal) {
-        console.log('child process terminated due to receipt of signal ' + code);
-        console.log(' video created successfully.');
-    });
-    console.log('Recording Start');
+        child.on('exit', function (code, signal) {
+            console.log('child process terminated due to receipt of signal ' + code);
+            console.log(' video created successfully.');
+        });
+        console.log('Recording Start');
+    }
 };
 
 var getFiles = function (dir, files_){
