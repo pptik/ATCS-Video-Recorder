@@ -9,13 +9,15 @@ Simpan data atcs video setiap 'n' detik sekali lewat RTSP, kemudian simpan ke NA
 * `npm install ftp` : ftp connection
 
 # Use :
-`rtsp_uri` : rtsp url ke atcs
+edit `rtsp_settings` array. You can add one or more camera/rtsp settings :
+`uri` : rtsp url.
+`name` : name of camera.
+`ftpdir` : folder to save video in remote ftp.
 
-`save_in_secs` : n-detik. Durasi video yang akan disimpan.
+`save_in_secs` : n-secs. Video duration.
 
-`connectionProperties` : Setup FTP
+`connectionProperties` : FTP Setup.
 
-`ftp_directory` : Folder remote dimana video disimpan
 
 # RUN
 
