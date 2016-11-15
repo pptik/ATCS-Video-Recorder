@@ -14,6 +14,8 @@ var connectionProperties = {
     password: ""
 };
 var ftp_directory = '/ATCS/video/unila1/'
+
+
 client.connect(connectionProperties);
 
 client.on('ready', function () {
@@ -34,13 +36,25 @@ chokidar.watch(__dirname + '/videos/', {ignored: /[\/\\]\./}).on('all', function
     }else if(event == "change"){
         console.log('file '+event, path);
         var arr = path.split("/");
+        var date = new Date();
+        var year = date.getFullYear();
+        year = year.toString().substr(2, 2);
+        arr[arr.length-1] = date.getDate() + '-' + (date.getMonth() + 1) + '-' + year + '-' + date.getHours() + '-' + date.getMinutes() + '-' + date.getSeconds();
+        var _r = '';
+        for(var i = 0; i < arr.length; i++){
+            _r = _r+arr[i];
+        }
+        _r = _r+'.mp4';
+        fs.rename(path, _r, function(err) {
+            if ( err ) console.log('ERROR: ' + err);
+        });
         if(isFtpReady) {
-            client.put(path, ftp_directory + arr[arr.length - 1], function (err) {
+            client.put(_r, ftp_directory + arr[arr.length-1]+'.mp4', function (err) {
                 if (err) {
-                    console.log("upload " + arr[arr.length - 1], err);
+                    console.log("upload " + arr[arr.length-1]+'.mp4', err);
                 } else {
-                    console.log("upload " + arr[arr.length - 1], 'success');
-                    fs.unlink(path);
+                    console.log("upload " + arr[arr.length-1]+'.mp4', 'success');
+                    fs.unlink(_r);
                 }
             });
         }
@@ -52,14 +66,14 @@ exports.start = function(){
     var year = date.getFullYear();
     year = year.toString().substr(2, 2);
     var unique = date.getDate() + '-' + (date.getMonth() + 1) + '-' + year + '-' + date.getHours() + '-' + date.getMinutes() + '-' + date.getSeconds();
-    var cmd = 'ffmpeg -rtsp_transport tcp -i '+rtsp_uri+' -vcodec libx264 -segment_time '+save_in_secs+' -reset_timestamps 1 -f segment '+ __dirname + '/videos/' +unique+'-BLATCS_%03d.mp4';
+    var cmd = 'ffmpeg -rtsp_transport tcp -i '+rtsp_uri+' -vcodec libx264 -segment_time '+save_in_secs+' -reset_timestamps 1 -f segment '+ __dirname + '/videos/' +unique+'-BLATCS_%03d-01.mp4';
     console.log(' video processing start');
     child = exec(cmd);
     child.stdout.on('data', function (data) {
-      //  console.log('stdout: ' + data);
+     //   console.log('stdout: ' + data);
         });
     child.stderr.on('data', function (data) {
-      //      console.log('stdout: ' + data);
+       //     console.log('stdout: ' + data);
         });
     child.on('exit', function (code, signal) {
         console.log('child process terminated due to receipt of signal ' + code);
@@ -80,10 +94,8 @@ var getFiles = function (dir, files_){
         }
     }
     if(files_.length > 1) {
-        console.log("list size > 0 : "+files_.length);
         return files_[files_.length - 2];
     }else {
-        console.log("list size < 0 : "+files_.length);
         return files_[files_.length - 1];
     }
 }
