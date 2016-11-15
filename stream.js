@@ -1,17 +1,19 @@
-var path = require('path');
 var exec = require('child_process').exec;
 var child = [];
-var sleep = require('sleep');
 const fs = require('fs');
 var chokidar = require('chokidar');
 var Client = require('ftp');
 var client = new Client();
 var isFtpReady = false;
+
+var rtsp_uri = ''
+var save_in_secs = '10';
 var connectionProperties = {
     host: "",
     user: "",
     password: ""
 };
+var ftp_directory = '/ATCS/video/unila1/'
 client.connect(connectionProperties);
 
 client.on('ready', function () {
@@ -37,7 +39,7 @@ chokidar.watch(__dirname + '/videos/', {ignored: /[\/\\]\./}).on('all', function
         console.log('file '+event, path);
         var arr = path.split("/");
         if(isFtpReady) {
-            client.put(path, '/ATCS/video/unila1/' + arr[arr.length - 1], function (err) {
+            client.put(path, ftp_directory + arr[arr.length - 1], function (err) {
                 if (err) {
                     console.log("upload " + arr[arr.length - 1], err);
                 } else {
@@ -49,7 +51,7 @@ chokidar.watch(__dirname + '/videos/', {ignored: /[\/\\]\./}).on('all', function
 });
 
 exports.start = function(){
-    var cmd = 'ffmpeg -rtsp_transport tcp -i <rtsp-url> -vcodec libx264 -segment_time 10 -reset_timestamps 1 -f segment '+ __dirname + '/videos/' +'YDXJ0028_%03d.mp4';
+    var cmd = 'ffmpeg -rtsp_transport tcp -i '+rtsp_uri+' -vcodec libx264 -segment_time '+save_in_secs+' -reset_timestamps 1 -f segment '+ __dirname + '/videos/' +'YDXJ0028_%03d.mp4';
     console.log(' video processing start');
     child = exec(cmd);
     child.stdout.on('data', function (data) {
