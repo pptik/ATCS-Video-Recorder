@@ -7,6 +7,8 @@ var client = new Client();
 var isFtpReady = false;
 
 var rtsp_settings = [
+    {uri : '', name : '', ftpdir : ''},
+    {uri : '', name : '', ftpdir : ''},
     {uri : '', name : '', ftpdir : ''}
 ];
 
@@ -27,23 +29,18 @@ client.on('ready', function () {
 
 chokidar.watch(__dirname + '/videos/', {ignored: /[\/\\]\./}).on('all', function(event, path) {
     if(event == "add"){
-        var arr = path.split("/");
-        var _s = getFiles('videos/', '.mp4');
-        var arrP = _s.split('/');
-        //console.log("file add : "+arr[arr.length-1]);
-        console.log("last file : "+arrP[arrP.length-1]);
-        console.log('file video from :'+event, path);
+        console.log('file '+event, path);
     }else if(event == "change"){
         console.log('file '+event, path);
         var arrCheck = path.split('-');
         arrCheck = arrCheck[arrCheck.length-1].split('.');
         var index = parseInt(arrCheck[0]);
-        console.log('file : '+rtsp_settings[index].name);
+        console.log('file from camera : '+rtsp_settings[index].name);
         var arr = path.split("/");
         var date = new Date();
         var year = date.getFullYear();
         arr[arr.length-1] = date.getDate() + '-' + (date.getMonth() + 1) + '-' + year + '-' + date.getHours() + '-' + date.getMinutes() + '-' + date.getSeconds();
-        var _r = '';
+        var _r = rtsp_settings[index].name+'_';
         for(var i = 0; i < arr.length; i++){
             _r = _r+arr[i];
         }
@@ -52,7 +49,7 @@ chokidar.watch(__dirname + '/videos/', {ignored: /[\/\\]\./}).on('all', function
             if ( err ) console.log('ERROR: ' + err);
         });
         if(isFtpReady) {
-            client.put(_r, rtsp_settings[index].ftpdir + arr[arr.length-1]+'.mp4', function (err) {
+            client.put(_r, rtsp_settings[index].ftpdir + rtsp_settings[index].name+'_'+arr[arr.length-1]+'.mp4', function (err) {
                 if (err) {
                     console.log("upload " + arr[arr.length-1]+'.mp4', err);
                 } else {
@@ -86,25 +83,6 @@ exports.start = function(){
         console.log('Recording Start');
     }
 };
-
-var getFiles = function (dir, files_){
-    files_ = [];
-    var files = fs.readdirSync(dir);
-    for (var i in files){
-        var name = dir + files[i];
-        if (fs.statSync(name).isDirectory()){
-            getFiles(name, files_);
-        } else {
-            files_.push(name);
-        }
-    }
-    if(files_.length > 1) {
-        return files_[files_.length - 2];
-    }else {
-        return files_[files_.length - 1];
-    }
-}
-
 
 exports.stop = function () {
     child.kill('SIGTERM');
