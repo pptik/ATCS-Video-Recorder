@@ -16,3 +16,7 @@ Simpan data atcs video setiap 'n' detik sekali lewat RTSP, kemudian simpan ke NA
 `connectionProperties` : Setup FTP
 
 `ftp_directory` : Folder remote dimana video disimpan
+
+# RUN
+
+`node /bin/www`
