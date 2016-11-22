@@ -12,6 +12,9 @@ var rtsp_settings = [
     {uri : '', name : '', ftpdir : ''}
 ];
 
+var filesToDelete = [];
+var fileLength = rtsp_settings.length;
+
 var save_in_secs = '20';
 var connectionProperties = {
     host: "",
@@ -32,6 +35,17 @@ chokidar.watch(__dirname + '/videos/', {ignored: /[\/\\]\./}).on('all', function
         console.log('file '+event, path);
     }else if(event == "change"){
         console.log('file '+event, path);
+	/*	for(var i = 0; i < fileLength; i++){
+			if(filesToDelete[i] != null){
+				fs.unlink(filesToDelete[i], function(err){
+						if(err){
+							console.log("failed delete file "+filesToDelete[i]);
+						}else{
+							console.log("success delete file "+filesToDelete[i]);
+						}
+					}); 
+			}
+		} */
         var arrCheck = path.split('-');
         arrCheck = arrCheck[arrCheck.length-1].split('.');
         var index = parseInt(arrCheck[0]);
@@ -45,16 +59,29 @@ chokidar.watch(__dirname + '/videos/', {ignored: /[\/\\]\./}).on('all', function
             _r = _r+arr[i];
         }
         _r = _r+'.mp4';
+		/*
         fs.rename(path, _r, function(err) {
-            if ( err ) console.log('ERROR: ' + err);
+            if ( err ) console.log('ERROR at Rename: ' + err);
         });
+		*/
         if(isFtpReady) {
-            client.put(_r, rtsp_settings[index].ftpdir + rtsp_settings[index].name+'_'+arr[arr.length-1]+'.mp4', function (err) {
+            client.put(path, rtsp_settings[index].ftpdir + rtsp_settings[index].name+'_'+arr[arr.length-1]+'.mp4', function (err) {
                 if (err) {
-                    console.log("upload " + arr[arr.length-1]+'.mp4', err);
+                    //console.log("upload " + arr[arr.length-1]+'.mp4', err);
+                    console.log("upload " + _r+'.mp4', err);
                 } else {
-                    console.log("upload " + arr[arr.length-1]+'.mp4', 'success');
-                    fs.unlink(_r);
+                    console.log("upload " + _r+'.mp4', 'success');
+                 //   sleep.sleep(2);
+					if(filesToDelete[index] != null){
+						fs.unlink(filesToDelete[index], function(err){
+							if(err){
+								console.log("failed delete file "+filesToDelete[index]);
+							}else{
+								console.log("success delete file "+filesToDelete[index]);
+							}
+						}); 
+					} 
+					filesToDelete[index] = path;
                 }
             });
         }
@@ -71,10 +98,10 @@ exports.start = function(){
         console.log(' video processing to '+rtsp_settings[i].name+' start');
         child = exec(cmd);
         child.stdout.on('data', function (data) {
-            //   console.log('stdout: ' + data);
+               //console.log('stdout: ' + data);
         });
         child.stderr.on('data', function (data) {
-            //     console.log('stdout: ' + data);
+                //console.log('stdout: ' + data);
         });
         child.on('exit', function (code, signal) {
             console.log('child process terminated due to receipt of signal ' + code);
@@ -88,4 +115,5 @@ exports.stop = function () {
     child.kill('SIGTERM');
     client.end();
 };
+
 
